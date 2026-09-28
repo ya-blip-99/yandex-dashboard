@@ -20,22 +20,10 @@
     </header>
 
     <section class="filters card">
-      <div class="field">
-        <label for="fromA">Период — с</label>
-        <input type="date" id="fromA">
-      </div>
-      <div class="field">
-        <label for="toA">Период — по</label>
-        <input type="date" id="toA">
-      </div>
-      <div class="field">
-        <label for="account">Кабинет</label>
-        <select id="account"></select>
-      </div>
-      <div class="field">
-        <label for="campaign">ID рекламной кампании</label>
-        <select id="campaign"></select>
-      </div>
+      <div class="field"><label for="fromA">Период — с</label><input type="date" id="fromA"></div>
+      <div class="field"><label for="toA">Период — по</label><input type="date" id="toA"></div>
+      <div class="field"><label for="account">Кабинет</label><select id="account"></select></div>
+      <div class="field"><label for="campaign">ID рекламной кампании</label><select id="campaign"></select></div>
       <div class="field">
         <label for="aggregation">Агрегация</label>
         <select id="aggregation">
@@ -43,66 +31,35 @@
           <option value="month">По месяцам</option>
         </select>
       </div>
-      <button id="apply" class="btn primary">Применить</button>
-      <button id="reset" class="btn">Сбросить</button>
+      <div class="actions">
+        <button id="apply" class="btn primary">Применить</button>
+        <button id="reset" class="btn">Сбросить</button>
+      </div>
     </section>
 
     <section class="kpis">
-      <article class="kpi card">
-        <span>Расход</span>
-        <strong id="spend">—</strong>
-        <small id="spendDelta">—</small>
-      </article>
-      <article class="kpi card">
-        <span>Конверсии</span>
-        <strong id="conversions">—</strong>
-        <small id="conversionsDelta">—</small>
-      </article>
-      <article class="kpi card">
-        <span>Квал-лиды</span>
-        <strong id="qualified">—</strong>
-        <small id="qualifiedDelta">—</small>
-      </article>
-      <article class="kpi card">
-        <span>CPA</span>
-        <strong id="cpa">—</strong>
-        <small id="cpaDelta">—</small>
-      </article>
-      <article class="kpi card">
-        <span>CTR</span>
-        <strong id="ctr">—</strong>
-        <small id="ctrDelta">—</small>
-      </article>
+      <article class="kpi card"><span>Расход</span><strong id="spend">—</strong><small id="spendDelta">—</small></article>
+      <article class="kpi card"><span>Конверсии</span><strong id="conversions">—</strong><small id="conversionsDelta">—</small></article>
+      <article class="kpi card"><span>Квал-лиды</span><strong id="qualified">—</strong><small id="qualifiedDelta">—</small></article>
+      <article class="kpi card"><span>CPA</span><strong id="cpa">—</strong><small id="cpaDelta">—</small></article>
+      <article class="kpi card"><span>Стоимость квал-лида</span><strong id="cql">—</strong><small id="cqlDelta">—</small></article>
+      <article class="kpi card"><span>CTR</span><strong id="ctr">—</strong><small id="ctrDelta">—</small></article>
     </section>
 
     <section class="charts">
       <article class="card chart-card">
-        <div class="section-head">
-          <div>
-            <h2>Маркетинг: расход</h2>
-            <p>Динамика расхода за выбранный период</p>
-          </div>
-        </div>
+        <div class="section-head"><div><h2>Маркетинг: расход</h2><p>Динамика расхода за выбранный период</p></div></div>
         <canvas id="spendChart"></canvas>
       </article>
-
       <article class="card chart-card">
-        <div class="section-head">
-          <div>
-            <h2>Конверсии и квал-лиды</h2>
-            <p>Квал-лиды появятся после подключения amoCRM</p>
-          </div>
-        </div>
+        <div class="section-head"><div><h2>Конверсии и квал-лиды</h2><p>Квал-лиды появятся после подключения amoCRM</p></div></div>
         <canvas id="leadChart"></canvas>
       </article>
     </section>
 
     <section class="card table-card">
       <div class="section-head">
-        <div>
-          <h2>Рекламные кампании</h2>
-          <p>Сравнение автоматически идёт с предыдущим периодом такой же длины</p>
-        </div>
+        <div><h2>Рекламные кампании</h2><p>Сравнение автоматически идёт с предыдущим периодом такой же длины</p></div>
       </div>
       <div class="table-wrap">
         <table>
@@ -113,6 +70,7 @@
               <th>Конверсии</th>
               <th>Квал-лиды</th>
               <th>CPA</th>
+              <th>Стоимость квал-лида</th>
               <th>CTR</th>
             </tr>
           </thead>
@@ -126,7 +84,6 @@
       <p>Сайт уже готов, но браузер не может прочитать Google Таблицу.</p>
     </section>
   </main>
-
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <script src="app.js"></script>
 </body>
