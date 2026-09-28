@@ -14,34 +14,26 @@
     <header class="hero">
       <div>
         <h1>Yandex Direct Dashboard</h1>
-        <p>Маркетинг и квал-лиды по периодам</p>
+        <p>Маркетинг и квал-лиды по выбранному периоду</p>
       </div>
       <div id="status" class="status">Загрузка данных…</div>
     </header>
 
     <section class="filters card">
       <div class="field">
-        <label for="fromA">Период A — с</label>
+        <label for="fromA">Период — с</label>
         <input type="date" id="fromA">
       </div>
       <div class="field">
-        <label for="toA">Период A — по</label>
+        <label for="toA">Период — по</label>
         <input type="date" id="toA">
-      </div>
-      <div class="field">
-        <label for="fromB">Период B — с</label>
-        <input type="date" id="fromB">
-      </div>
-      <div class="field">
-        <label for="toB">Период B — по</label>
-        <input type="date" id="toB">
       </div>
       <div class="field">
         <label for="account">Кабинет</label>
         <select id="account"></select>
       </div>
       <div class="field">
-        <label for="campaign">Рекламная кампания</label>
+        <label for="campaign">ID рекламной кампании</label>
         <select id="campaign"></select>
       </div>
       <div class="field">
@@ -88,7 +80,7 @@
         <div class="section-head">
           <div>
             <h2>Маркетинг: расход</h2>
-            <p>Динамика расхода за период A</p>
+            <p>Динамика расхода за выбранный период</p>
           </div>
         </div>
         <canvas id="spendChart"></canvas>
@@ -98,7 +90,7 @@
         <div class="section-head">
           <div>
             <h2>Конверсии и квал-лиды</h2>
-            <p>Абсолютные значения за период A</p>
+            <p>Квал-лиды появятся после подключения amoCRM</p>
           </div>
         </div>
         <canvas id="leadChart"></canvas>
@@ -109,14 +101,14 @@
       <div class="section-head">
         <div>
           <h2>Рекламные кампании</h2>
-          <p>Только выбранный период A</p>
+          <p>Сравнение автоматически идёт с предыдущим периодом такой же длины</p>
         </div>
       </div>
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
-              <th>Кампания</th>
+              <th>ID РК</th>
               <th>Расход</th>
               <th>Конверсии</th>
               <th>Квал-лиды</th>
@@ -131,7 +123,7 @@
 
     <section id="setup" class="setup card hidden">
       <h2>Нужно открыть источник данных</h2>
-      <p>Сайт уже готов, но браузер не может прочитать Google Таблицу. Опубликуй листы <b>Combined</b> и <b>amoCRM</b> для чтения — после этого данные появятся автоматически.</p>
+      <p>Сайт уже готов, но браузер не может прочитать Google Таблицу.</p>
     </section>
   </main>
 
