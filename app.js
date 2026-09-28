@@ -53,8 +53,7 @@ function mapDirect(rows){
 }
 function mapAmo(rows){
   if(!rows.length)return[];
-  const h=rows[0],ix=n=>h.indexOf(n);
-  const hasCampaignId=ix("Campaign ID")>=0;
+  const h=rows[0],ix=n=>h.indexOf(n),hasCampaignId=ix("Campaign ID")>=0;
   return rows.slice(1).map(r=>({
     date:parseDate(r[ix("Date")]),
     account:String(r[ix("Account ID")]||"").trim(),
@@ -68,7 +67,10 @@ function filter(src,a,b,acc,cam){
 function sum(rows,qrows){
   const s=rows.reduce((a,x)=>({cost:a.cost+x.cost,conv:a.conv+x.conversions,clicks:a.clicks+x.clicks,imp:a.imp+x.impressions}),{cost:0,conv:0,clicks:0,imp:0});
   s.qual=qrows.reduce((a,x)=>a+x.qualified,0);
-  s.cpa=s.conv?s.cost/s.conv:0;s.ctr=s.imp?s.clicks/s.imp:0;return s;
+  s.cpa=s.conv?s.cost/s.conv:0;
+  s.cql=s.qual?s.cost/s.qual:0;
+  s.ctr=s.imp?s.clicks/s.imp:0;
+  return s;
 }
 function comparison(a,b,invert=false){
   if(!b)return["Сравнение недоступно",""];
@@ -88,8 +90,7 @@ function populateAccounts(){
   $("account").innerHTML='<option value="ALL">Все кабинеты</option>'+x.map(v=>'<option value="'+v+'">'+v+'</option>').join("");
 }
 function populateCampaigns(){
-  const acc=$("account").value||"ALL";
-  const old=$("campaign").value;
+  const acc=$("account").value||"ALL",old=$("campaign").value;
   const x=[...new Set(direct.filter(r=>acc==="ALL"||r.account===acc).map(r=>r.campaignId))].sort((a,b)=>Number(a)-Number(b));
   $("campaign").innerHTML='<option value="ALL">Все РК</option>'+x.map(v=>'<option value="'+v+'">'+v+'</option>').join("");
   $("campaign").value=x.includes(old)?old:"ALL";
@@ -120,12 +121,14 @@ function render(){
   $("conversions").textContent=int(a.conv);
   $("qualified").textContent=int(a.qual);
   $("cpa").textContent=rub(a.cpa);
+  $("cql").textContent=a.qual?rub(a.cql):"—";
   $("ctr").textContent=pct(a.ctr);
 
   setDelta("spendDelta",a.cost,b.cost);
   setDelta("conversionsDelta",a.conv,b.conv);
   setDelta("qualifiedDelta",a.qual,b.qual);
   setDelta("cpaDelta",a.cpa,b.cpa,true);
+  if(a.qual&&b.qual)setDelta("cqlDelta",a.cql,b.cql,true);else{$("cqlDelta").textContent="Сравнение недоступно";$("cqlDelta").className=""}
   setDelta("ctrDelta",a.ctr,b.ctr);
 
   const p=points(A,QA,mode),labels=p.map(x=>x[0]);
@@ -138,7 +141,7 @@ function render(){
   const m=new Map;
   A.forEach(x=>{const v=m.get(x.campaignId)||{cost:0,conv:0,clicks:0,imp:0,qual:0};v.cost+=x.cost;v.conv+=x.conversions;v.clicks+=x.clicks;v.imp+=x.impressions;m.set(x.campaignId,v)});
   QA.forEach(x=>{const v=m.get(x.campaignId)||{cost:0,conv:0,clicks:0,imp:0,qual:0};v.qual+=x.qualified;m.set(x.campaignId,v)});
-  $("campaignRows").innerHTML=[...m].sort((a,b)=>b[1].cost-a[1].cost).map(([id,v])=>'<tr><td>'+id+'</td><td>'+rub(v.cost)+'</td><td>'+int(v.conv)+'</td><td>'+int(v.qual)+'</td><td>'+rub(v.conv?v.cost/v.conv:0)+'</td><td>'+pct(v.imp?v.clicks/v.imp:0)+'</td></tr>').join("")||'<tr><td colspan="6">Нет данных</td></tr>';
+  $("campaignRows").innerHTML=[...m].sort((a,b)=>b[1].cost-a[1].cost).map(([id,v])=>'<tr><td>'+id+'</td><td>'+rub(v.cost)+'</td><td>'+int(v.conv)+'</td><td>'+int(v.qual)+'</td><td>'+rub(v.conv?v.cost/v.conv:0)+'</td><td>'+(v.qual?rub(v.cost/v.qual):"—")+'</td><td>'+pct(v.imp?v.clicks/v.imp:0)+'</td></tr>').join("")||'<tr><td colspan="7">Нет данных</td></tr>';
 }
 async function init(){
   try{
