@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Yandex Direct Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <div>
+        <h1>Yandex Direct Dashboard</h1>
+        <p>Маркетинг и квал-лиды по периодам</p>
+      </div>
+      <div id="status" class="status">Загрузка данных…</div>
+    </header>
+
+    <section class="filters card">
+      <div class="field">
+        <label for="fromA">Период A — с</label>
+        <input type="date" id="fromA">
+      </div>
+      <div class="field">
+        <label for="toA">Период A — по</label>
+        <input type="date" id="toA">
+      </div>
+      <div class="field">
+        <label for="fromB">Период B — с</label>
+        <input type="date" id="fromB">
+      </div>
+      <div class="field">
+        <label for="toB">Период B — по</label>
+        <input type="date" id="toB">
+      </div>
+      <div class="field">
+        <label for="account">Кабинет</label>
+        <select id="account"></select>
+      </div>
+      <div class="field">
+        <label for="campaign">Рекламная кампания</label>
+        <select id="campaign"></select>
+      </div>
+      <div class="field">
+        <label for="aggregation">Агрегация</label>
+        <select id="aggregation">
+          <option value="day">По дням</option>
+          <option value="month">По месяцам</option>
+        </select>
+      </div>
+      <button id="apply" class="btn primary">Применить</button>
+      <button id="reset" class="btn">Сбросить</button>
+    </section>
+
+    <section class="kpis">
+      <article class="kpi card">
+        <span>Расход</span>
+        <strong id="spend">—</strong>
+        <small id="spendDelta">—</small>
+      </article>
+      <article class="kpi card">
+        <span>Конверсии</span>
+        <strong id="conversions">—</strong>
+        <small id="conversionsDelta">—</small>
+      </article>
+      <article class="kpi card">
+        <span>Квал-лиды</span>
+        <strong id="qualified">—</strong>
+        <small id="qualifiedDelta">—</small>
+      </article>
+      <article class="kpi card">
+        <span>CPA</span>
+        <strong id="cpa">—</strong>
+        <small id="cpaDelta">—</small>
+      </article>
+      <article class="kpi card">
+        <span>CTR</span>
+        <strong id="ctr">—</strong>
+        <small id="ctrDelta">—</small>
+      </article>
+    </section>
+
+    <section class="charts">
+      <article class="card chart-card">
+        <div class="section-head">
+          <div>
+            <h2>Маркетинг: расход</h2>
+            <p>Динамика расхода за период A</p>
+          </div>
+        </div>
+        <canvas id="spendChart"></canvas>
+      </article>
+
+      <article class="card chart-card">
+        <div class="section-head">
+          <div>
+            <h2>Конверсии и квал-лиды</h2>
+            <p>Абсолютные значения за период A</p>
+          </div>
+        </div>
+        <canvas id="leadChart"></canvas>
+      </article>
+    </section>
+
+    <section class="card table-card">
+      <div class="section-head">
+        <div>
+          <h2>Рекламные кампании</h2>
+          <p>Только выбранный период A</p>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Кампания</th>
+              <th>Расход</th>
+              <th>Конверсии</th>
+              <th>Квал-лиды</th>
+              <th>CPA</th>
+              <th>CTR</th>
+            </tr>
+          </thead>
+          <tbody id="campaignRows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="setup" class="setup card hidden">
+      <h2>Нужно открыть источник данных</h2>
+      <p>Сайт уже готов, но браузер не может прочитать Google Таблицу. Опубликуй листы <b>Combined</b> и <b>amoCRM</b> для чтения — после этого данные появятся автоматически.</p>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
