@@ -24,13 +24,24 @@
       <div class="field"><label for="toA">Период — по</label><input type="date" id="toA"></div>
       <div class="field"><label for="account">Кабинет</label><select id="account"></select></div>
       <div class="field"><label for="campaign">ID рекламной кампании</label><select id="campaign"></select></div>
+
       <div class="field">
-        <label for="aggregation">Агрегация</label>
-        <select id="aggregation">
-          <option value="day">По дням</option>
-          <option value="month">По месяцам</option>
+        <label for="periodPreset">Указать период</label>
+        <select id="periodPreset">
+          <option value="">Выберите период</option>
+          <option value="today">Сегодня</option>
+          <option value="yesterday">Вчера</option>
+          <option value="lastWeek">Прошлая неделя</option>
+          <option value="lastMonth">Прошлый месяц</option>
+          <option value="thisWeek">Эта неделя</option>
+          <option value="thisMonth">Этот месяц</option>
+          <option value="last7">Последние 7 дней</option>
+          <option value="last30">Последние 30 дней</option>
+          <option value="last90">Последние 90 дней</option>
+          <option value="last365">Последние 365 дней</option>
         </select>
       </div>
+
       <div class="actions">
         <button id="apply" class="btn primary">Применить</button>
         <button id="reset" class="btn">Сбросить</button>
