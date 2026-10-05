@@ -99,12 +99,54 @@ function defaults(){
   const ds=direct.map(x=>x.date).sort((a,b)=>a-b),max=ds.at(-1),min=ds[0];if(!max)return;
   const a=new Date(max);a.setDate(a.getDate()-29);
   $("fromA").value=iso(a<min?min:a);$("toA").value=iso(max);
+  $("periodPreset").value="";
 }
-function bucket(d,mode){return mode==="month"?d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0"):iso(d)}
-function points(rows,qrows,mode){
+function startOfWeek(date){
+  const d=new Date(date);d.setHours(0,0,0,0);
+  const day=d.getDay();
+  const diff=day===0?-6:1-day;
+  d.setDate(d.getDate()+diff);
+  return d;
+}
+function endOfWeek(date){
+  const d=startOfWeek(date);d.setDate(d.getDate()+6);return d;
+}
+function setPeriodPreset(value){
+  if(!value)return;
+  const today=new Date();today.setHours(0,0,0,0);
+  let from=new Date(today),to=new Date(today);
+
+  if(value==="yesterday"){
+    from.setDate(from.getDate()-1);to=new Date(from);
+  }else if(value==="lastWeek"){
+    const thisMonday=startOfWeek(today);
+    to=new Date(thisMonday);to.setDate(to.getDate()-1);
+    from=new Date(to);from.setDate(from.getDate()-6);
+  }else if(value==="lastMonth"){
+    from=new Date(today.getFullYear(),today.getMonth()-1,1);
+    to=new Date(today.getFullYear(),today.getMonth(),0);
+  }else if(value==="thisWeek"){
+    from=startOfWeek(today);
+  }else if(value==="thisMonth"){
+    from=new Date(today.getFullYear(),today.getMonth(),1);
+  }else if(value==="last7"){
+    from.setDate(from.getDate()-6);
+  }else if(value==="last30"){
+    from.setDate(from.getDate()-29);
+  }else if(value==="last90"){
+    from.setDate(from.getDate()-89);
+  }else if(value==="last365"){
+    from.setDate(from.getDate()-364);
+  }
+
+  $("fromA").value=iso(from);
+  $("toA").value=iso(to);
+  render();
+}
+function points(rows,qrows){
   const m=new Map;
-  rows.forEach(x=>{const k=bucket(x.date,mode),v=m.get(k)||{cost:0,conv:0,qual:0};v.cost+=x.cost;v.conv+=x.conversions;m.set(k,v)});
-  qrows.forEach(x=>{const k=bucket(x.date,mode),v=m.get(k)||{cost:0,conv:0,qual:0};v.qual+=x.qualified;m.set(k,v)});
+  rows.forEach(x=>{const k=iso(x.date),v=m.get(k)||{cost:0,conv:0,qual:0};v.cost+=x.cost;v.conv+=x.conversions;m.set(k,v)});
+  qrows.forEach(x=>{const k=iso(x.date),v=m.get(k)||{cost:0,conv:0,qual:0};v.qual+=x.qualified;m.set(k,v)});
   return [...m].sort((a,b)=>a[0].localeCompare(b[0]));
 }
 function chart(old,id,type,labels,datasets){
@@ -112,7 +154,7 @@ function chart(old,id,type,labels,datasets){
   return new Chart($(id),{type,data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:"#9aa8b9"}}},scales:{x:{ticks:{color:"#7f8b9b"},grid:{color:"#182433"}},y:{ticks:{color:"#7f8b9b"},grid:{color:"#182433"}}}}});
 }
 function render(){
-  const r=range(),acc=$("account").value,cam=$("campaign").value,mode=$("aggregation").value;
+  const r=range(),acc=$("account").value,cam=$("campaign").value;
   const A=filter(direct,r.a,r.b,acc,cam),B=filter(direct,r.c,r.d,acc,cam);
   const QA=filter(amo,r.a,r.b,acc,cam),QB=filter(amo,r.c,r.d,acc,cam);
   const a=sum(A,QA),b=sum(B,QB);
@@ -131,7 +173,7 @@ function render(){
   if(a.qual&&b.qual)setDelta("cqlDelta",a.cql,b.cql,true);else{$("cqlDelta").textContent="Сравнение недоступно";$("cqlDelta").className=""}
   setDelta("ctrDelta",a.ctr,b.ctr);
 
-  const p=points(A,QA,mode),labels=p.map(x=>x[0]);
+  const p=points(A,QA),labels=p.map(x=>x[0]);
   spendChart=chart(spendChart,"spendChart","bar",labels,[{label:"Расход",data:p.map(x=>x[1].cost),backgroundColor:"rgba(59,130,246,.60)",borderColor:"#60a5fa",borderWidth:1}]);
 
   const leadSets=[{label:"Конверсии",data:p.map(x=>x[1].conv),borderColor:"#60a5fa",backgroundColor:"#60a5fa",tension:.3}];
@@ -154,6 +196,9 @@ async function init(){
   }
 }
 $("account").addEventListener("change",populateCampaigns);
+$("periodPreset").addEventListener("change",e=>setPeriodPreset(e.target.value));
+$("fromA").addEventListener("change",()=>{$("periodPreset").value=""});
+$("toA").addEventListener("change",()=>{$("periodPreset").value=""});
 $("apply").addEventListener("click",render);
 $("reset").addEventListener("click",()=>{populateAccounts();populateCampaigns();defaults();render()});
 init();
