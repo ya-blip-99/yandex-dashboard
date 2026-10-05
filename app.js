@@ -35,7 +35,6 @@ async function load(url){
   if(!rows.length)throw Error("Пустой CSV");
   return rows;
 }
-
 function parseDate(s){
   const d=new Date(s);if(!isNaN(d))return new Date(d.getFullYear(),d.getMonth(),d.getDate());
   const m=String(s).match(/(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})/);
@@ -75,6 +74,7 @@ function sum(rows,qrows){
   s.ctr=s.imp?s.clicks/s.imp:0;
   s.cpc=s.clicks?s.cost/s.clicks:0;
   s.cr=s.clicks?s.conv/s.clicks:0;
+  s.qualRate=s.conv?s.qual/s.conv:0;
   return s;
 }
 function comparison(a,b,invert=false){
@@ -82,7 +82,10 @@ function comparison(a,b,invert=false){
   const d=(a-b)/Math.abs(b),good=invert?d<=0:d>=0;
   return[(d>=0?"+":"")+new Intl.NumberFormat("ru-RU",{style:"percent",minimumFractionDigits:1,maximumFractionDigits:1}).format(d)+" к предыдущему периоду",good?"up":"down"];
 }
-function setDelta(id,a,b,invert=false){const [t,c]=comparison(a,b,invert),e=$(id);e.textContent=t;e.className=c}
+function setDelta(id,a,b,invert=false){
+  const e=$(id);if(!e)return;
+  const [t,c]=comparison(a,b,invert);e.textContent=t;e.className=c;
+}
 function range(){
   const a=new Date($("fromA").value+"T00:00:00"),b=new Date($("toA").value+"T23:59:59");
   const days=Math.floor((b-a)/86400000)+1;
@@ -108,45 +111,23 @@ function defaults(){
 }
 function startOfWeek(date){
   const d=new Date(date);d.setHours(0,0,0,0);
-  const day=d.getDay();
-  const diff=day===0?-6:1-day;
-  d.setDate(d.getDate()+diff);
-  return d;
-}
-function endOfWeek(date){
-  const d=startOfWeek(date);d.setDate(d.getDate()+6);return d;
+  const day=d.getDay(),diff=day===0?-6:1-day;
+  d.setDate(d.getDate()+diff);return d;
 }
 function setPeriodPreset(value){
   if(!value)return;
   const today=new Date();today.setHours(0,0,0,0);
   let from=new Date(today),to=new Date(today);
-
-  if(value==="yesterday"){
-    from.setDate(from.getDate()-1);to=new Date(from);
-  }else if(value==="lastWeek"){
-    const thisMonday=startOfWeek(today);
-    to=new Date(thisMonday);to.setDate(to.getDate()-1);
-    from=new Date(to);from.setDate(from.getDate()-6);
-  }else if(value==="lastMonth"){
-    from=new Date(today.getFullYear(),today.getMonth()-1,1);
-    to=new Date(today.getFullYear(),today.getMonth(),0);
-  }else if(value==="thisWeek"){
-    from=startOfWeek(today);
-  }else if(value==="thisMonth"){
-    from=new Date(today.getFullYear(),today.getMonth(),1);
-  }else if(value==="last7"){
-    from.setDate(from.getDate()-6);
-  }else if(value==="last30"){
-    from.setDate(from.getDate()-29);
-  }else if(value==="last90"){
-    from.setDate(from.getDate()-89);
-  }else if(value==="last365"){
-    from.setDate(from.getDate()-364);
-  }
-
-  $("fromA").value=iso(from);
-  $("toA").value=iso(to);
-  render();
+  if(value==="yesterday"){from.setDate(from.getDate()-1);to=new Date(from)}
+  else if(value==="lastWeek"){const m=startOfWeek(today);to=new Date(m);to.setDate(to.getDate()-1);from=new Date(to);from.setDate(from.getDate()-6)}
+  else if(value==="lastMonth"){from=new Date(today.getFullYear(),today.getMonth()-1,1);to=new Date(today.getFullYear(),today.getMonth(),0)}
+  else if(value==="thisWeek"){from=startOfWeek(today)}
+  else if(value==="thisMonth"){from=new Date(today.getFullYear(),today.getMonth(),1)}
+  else if(value==="last7"){from.setDate(from.getDate()-6)}
+  else if(value==="last30"){from.setDate(from.getDate()-29)}
+  else if(value==="last90"){from.setDate(from.getDate()-89)}
+  else if(value==="last365"){from.setDate(from.getDate()-364)}
+  $("fromA").value=iso(from);$("toA").value=iso(to);render();
 }
 function points(rows,qrows){
   const m=new Map;
@@ -158,33 +139,84 @@ function chart(old,id,type,labels,datasets){
   if(old)old.destroy();
   return new Chart($(id),{type,data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:"#9aa8b9"}}},scales:{x:{ticks:{color:"#7f8b9b"},grid:{color:"#182433"}},y:{ticks:{color:"#7f8b9b"},grid:{color:"#182433"}}}}});
 }
+
+function targetKey(){return "yd-targets-"+($("account").value||"ALL")}
+function loadTargets(){
+  let t={};
+  try{t=JSON.parse(localStorage.getItem(targetKey())||"{}")}catch{}
+  $("targetCPA").value=t.cpa||"";
+  $("targetCQL").value=t.cql||"";
+  $("targetCR").value=t.cr||"";
+  $("targetHint").textContent=$("account").value==="ALL"?"Для всех кабинетов":"Для кабинета "+$("account").value;
+}
+function saveTargets(){
+  const t={cpa:num($("targetCPA").value),cql:num($("targetCQL").value),cr:num($("targetCR").value)};
+  localStorage.setItem(targetKey(),JSON.stringify(t));
+  render();
+  const b=$("saveTargets");const old=b.textContent;b.textContent="Сохранено ✓";setTimeout(()=>b.textContent=old,1000);
+}
+function currentTargets(a){
+  return {
+    cpa:num($("targetCPA").value)||a.cpa||0,
+    cql:num($("targetCQL").value)||a.cql||0,
+    cr:(num($("targetCR").value)/100)||a.cr||0,
+    customCPA:!!num($("targetCPA").value),
+    customCQL:!!num($("targetCQL").value),
+    customCR:!!num($("targetCR").value)
+  };
+}
+function classifyCampaign(v,t){
+  const issues=[];let severity=0;
+  const spendThreshold=t.cpa||1000;
+
+  if(v.cost>=spendThreshold&&v.conv===0){
+    issues.push("расход "+rub(v.cost)+", конверсий 0");severity=2;
+  }
+  if(v.conv>0&&t.cpa>0&&v.cpa>t.cpa){
+    const over=v.cpa/t.cpa-1;
+    issues.push("CPA "+rub(v.cpa)+" при цели "+rub(t.cpa));
+    severity=Math.max(severity,over>=0.2?2:1);
+  }
+  if(t.cr>0&&v.clicks>=30&&v.cr<t.cr){
+    issues.push("CR "+pct(v.cr)+" при цели ≥ "+pct(t.cr));
+    severity=Math.max(severity,1);
+  }
+  if(amo.length&&v.qual>0&&t.cql>0&&v.cql>t.cql){
+    const over=v.cql/t.cql-1;
+    issues.push("CQL "+rub(v.cql)+" при цели "+rub(t.cql));
+    severity=Math.max(severity,over>=0.2?2:1);
+  }
+  return {issues,severity,status:severity===2?"🔴 Проблема":severity===1?"🟡 Проверить":"🟢 Норма"};
+}
+
 function render(){
   const r=range(),acc=$("account").value,cam=$("campaign").value;
   const A=filter(direct,r.a,r.b,acc,cam),B=filter(direct,r.c,r.d,acc,cam);
   const QA=filter(amo,r.a,r.b,acc,cam),QB=filter(amo,r.c,r.d,acc,cam);
-  const a=sum(A,QA),b=sum(B,QB);
+  const a=sum(A,QA),b=sum(B,QB),targets=currentTargets(a);
 
   $("spend").textContent=rub(a.cost);
   $("conversions").textContent=int(a.conv);
   $("qualified").textContent=int(a.qual);
   $("cpa").textContent=rub(a.cpa);
   $("cql").textContent=a.qual?rub(a.cql):"—";
-  $("ctr").textContent=pct(a.ctr);
-  $("cpc").textContent=rub(a.cpc);
   $("cr").textContent=pct(a.cr);
 
   setDelta("spendDelta",a.cost,b.cost);
   setDelta("conversionsDelta",a.conv,b.conv);
   setDelta("qualifiedDelta",a.qual,b.qual);
   setDelta("cpaDelta",a.cpa,b.cpa,true);
-  if(a.qual&&b.qual)setDelta("cqlDelta",a.cql,b.cql,true);else{$("cqlDelta").textContent="Сравнение недоступно";$("cqlDelta").className=""}
-  setDelta("ctrDelta",a.ctr,b.ctr);
-  setDelta("cpcDelta",a.cpc,b.cpc,true);
   setDelta("crDelta",a.cr,b.cr);
+  if(a.qual&&b.qual)setDelta("cqlDelta",a.cql,b.cql,true);else{$("cqlDelta").textContent="Сравнение недоступно";$("cqlDelta").className=""}
+
+  $("funnelClicks").textContent=int(a.clicks);
+  $("funnelConversions").textContent=int(a.conv);
+  $("funnelQualified").textContent=amo.length?int(a.qual):"—";
+  $("funnelCr").textContent="CR "+pct(a.cr);
+  $("funnelQualRate").textContent=amo.length?"Квалификация "+pct(a.qualRate):"amoCRM не подключена";
 
   const p=points(A,QA),labels=p.map(x=>x[0]);
   spendChart=chart(spendChart,"spendChart","bar",labels,[{label:"Расход",data:p.map(x=>x[1].cost),backgroundColor:"rgba(59,130,246,.60)",borderColor:"#60a5fa",borderWidth:1}]);
-
   const leadSets=[{label:"Конверсии",data:p.map(x=>x[1].conv),borderColor:"#60a5fa",backgroundColor:"#60a5fa",tension:.3}];
   if(amo.length)leadSets.push({label:"Квал-лиды",data:p.map(x=>x[1].qual),borderColor:"#31d17c",backgroundColor:"#31d17c",tension:.3});
   leadChart=chart(leadChart,"leadChart","line",labels,leadSets);
@@ -199,34 +231,33 @@ function render(){
     v.cr=v.clicks?v.conv/v.clicks:0;
     v.cpa=v.conv?v.cost/v.conv:0;
     v.cql=v.qual?v.cost/v.qual:0;
-    return {id,...v};
+    v.qualRate=v.conv?v.qual/v.conv:0;
+    const cls=classifyCampaign(v,targets);
+    return {id,...v,...cls,problem:cls.severity>0};
   }).sort((x,y)=>y.cost-x.cost);
-
-  const avg={cpa:a.cpa,ctr:a.ctr,cr:a.cr};
-  campaigns.forEach(v=>{
-    v.issues=[];
-    const zeroConvThreshold=Math.max(avg.cpa||0,1000);
-    if(v.cost>=zeroConvThreshold&&v.conv===0)v.issues.push("Есть расход, но нет конверсий");
-    if(v.conv>0&&avg.cpa>0&&v.cpa>avg.cpa*1.35)v.issues.push("CPA выше среднего на 35%+");
-    if(v.imp>=500&&avg.ctr>0&&v.ctr<avg.ctr*0.7)v.issues.push("CTR ниже среднего на 30%+");
-    if(v.clicks>=30&&avg.cr>0&&v.cr<avg.cr*0.65)v.issues.push("CR ниже среднего на 35%+");
-    v.problem=v.issues.length>0;
-  });
 
   const problemCampaigns=campaigns.filter(v=>v.problem);
   $("attentionCount").textContent=problemCampaigns.length;
   $("attentionList").innerHTML=problemCampaigns.length
-    ? problemCampaigns.slice(0,6).map(v=>'<div class="attention-item"><strong>РК '+v.id+'</strong><span>'+v.issues.join(" · ")+'</span></div>').join("")
-    : '<div class="attention-ok">Критичных отклонений за выбранный период не найдено.</div>';
+    ? problemCampaigns.slice(0,6).map(v=>'<div class="attention-item '+(v.severity===2?'critical':'warning')+'"><strong>РК '+v.id+'</strong><span>'+v.issues.join(" · ")+'</span></div>').join("")
+    : '<div class="attention-ok">Все кампании укладываются в заданные ориентиры.</div>';
 
   const visible=tableMode==="problems"?problemCampaigns:campaigns;
-  $("campaignRows").innerHTML=visible.map(v=>'<tr class="'+(v.problem?"problem-row":"")+'"><td>'+v.id+'</td><td>'+rub(v.cost)+'</td><td>'+int(v.imp)+'</td><td>'+int(v.clicks)+'</td><td>'+pct(v.ctr)+'</td><td>'+rub(v.cpc)+'</td><td>'+int(v.conv)+'</td><td>'+pct(v.cr)+'</td><td>'+rub(v.cpa)+'</td><td>'+int(v.qual)+'</td><td>'+(v.qual?rub(v.cql):"—")+'</td></tr>').join("")||'<tr><td colspan="11">Нет данных</td></tr>';
+  $("campaignRows").innerHTML=visible.map(v=>
+    '<tr class="'+(v.severity===2?'critical-row':v.severity===1?'warning-row':'')+'">'+
+    '<td>'+v.id+'</td><td>'+rub(v.cost)+'</td><td>'+int(v.imp)+'</td><td>'+int(v.clicks)+'</td>'+
+    '<td>'+pct(v.ctr)+'</td><td>'+rub(v.cpc)+'</td><td>'+int(v.conv)+'</td><td>'+pct(v.cr)+'</td>'+
+    '<td>'+rub(v.cpa)+'</td><td>'+(amo.length?int(v.qual):"—")+'</td>'+
+    '<td>'+(amo.length&&v.conv?pct(v.qualRate):"—")+'</td><td>'+(amo.length&&v.qual?rub(v.cql):"—")+'</td>'+
+    '<td class="status-cell">'+v.status+'</td></tr>'
+  ).join("")||'<tr><td colspan="13">Нет данных</td></tr>';
 }
+
 async function init(){
   try{
     const d=await load(DIRECT_URL);direct=mapDirect(d);
     try{amo=mapAmo(await load(AMO_URL))}catch{amo=[]}
-    populateAccounts();populateCampaigns();defaults();render();
+    populateAccounts();populateCampaigns();defaults();loadTargets();render();
     $("status").textContent="Данные загружены · "+int(direct.length)+" строк";
   }catch(e){
     console.error(e);
@@ -234,15 +265,16 @@ async function init(){
     $("setup").classList.remove("hidden");
     $("setup").querySelector("h2").textContent="Не удалось загрузить данные";
     $("setup").querySelector("p").innerHTML='Google Sheets временно не ответил. <button id="retryLoad" class="retry-btn">Повторить загрузку</button>';
-    setTimeout(()=>{const b=$("retryLoad"); if(b) b.onclick=()=>location.reload();},0);
+    setTimeout(()=>{const b=$("retryLoad");if(b)b.onclick=()=>location.reload()},0);
   }
 }
-$("account").addEventListener("change",populateCampaigns);
+$("account").addEventListener("change",()=>{populateCampaigns();loadTargets();render()});
 $("periodPreset").addEventListener("change",e=>setPeriodPreset(e.target.value));
 $("fromA").addEventListener("change",()=>{$("periodPreset").value=""});
 $("toA").addEventListener("change",()=>{$("periodPreset").value=""});
 $("apply").addEventListener("click",render);
-$("reset").addEventListener("click",()=>{tableMode="all";populateAccounts();populateCampaigns();defaults();$("showAll").classList.add("active");$("showProblems").classList.remove("active");render()});
+$("saveTargets").addEventListener("click",saveTargets);
+$("reset").addEventListener("click",()=>{tableMode="all";populateAccounts();populateCampaigns();defaults();loadTargets();$("showAll").classList.add("active");$("showProblems").classList.remove("active");render()});
 $("showAll").addEventListener("click",()=>{tableMode="all";$("showAll").classList.add("active");$("showProblems").classList.remove("active");render()});
 $("showProblems").addEventListener("click",()=>{tableMode="problems";$("showProblems").classList.add("active");$("showAll").classList.remove("active");render()});
 init();
