@@ -51,10 +51,23 @@
     <section class="kpis">
       <article class="kpi card"><span>Расход</span><strong id="spend">—</strong><small id="spendDelta">—</small></article>
       <article class="kpi card"><span>Конверсии</span><strong id="conversions">—</strong><small id="conversionsDelta">—</small></article>
-      <article class="kpi card"><span>Квал-лиды</span><strong id="qualified">—</strong><small id="qualifiedDelta">—</small></article>
       <article class="kpi card"><span>CPA</span><strong id="cpa">—</strong><small id="cpaDelta">—</small></article>
-      <article class="kpi card"><span>Стоимость квал-лида</span><strong id="cql">—</strong><small id="cqlDelta">—</small></article>
       <article class="kpi card"><span>CTR</span><strong id="ctr">—</strong><small id="ctrDelta">—</small></article>
+      <article class="kpi card"><span>CPC</span><strong id="cpc">—</strong><small id="cpcDelta">—</small></article>
+      <article class="kpi card"><span>CR в заявку</span><strong id="cr">—</strong><small id="crDelta">—</small></article>
+      <article class="kpi card"><span>Квал-лиды</span><strong id="qualified">—</strong><small id="qualifiedDelta">—</small></article>
+      <article class="kpi card"><span>Стоимость квал-лида</span><strong id="cql">—</strong><small id="cqlDelta">—</small></article>
+    </section>
+
+    <section class="attention card">
+      <div class="section-head">
+        <div>
+          <h2>Требуют внимания</h2>
+          <p>Автоматический поиск проблемных рекламных кампаний</p>
+        </div>
+        <span id="attentionCount" class="attention-count">0</span>
+      </div>
+      <div id="attentionList" class="attention-list"></div>
     </section>
 
     <section class="charts">
@@ -69,8 +82,15 @@
     </section>
 
     <section class="card table-card">
-      <div class="section-head">
-        <div><h2>Рекламные кампании</h2><p>Сравнение автоматически идёт с предыдущим периодом такой же длины</p></div>
+      <div class="section-head table-head">
+        <div>
+          <h2>Рекламные кампании</h2>
+          <p>Сравнение автоматически идёт с предыдущим периодом такой же длины</p>
+        </div>
+        <div class="table-toggle">
+          <button id="showAll" class="toggle-btn active">Все РК</button>
+          <button id="showProblems" class="toggle-btn">Только проблемные</button>
+        </div>
       </div>
       <div class="table-wrap">
         <table>
@@ -78,11 +98,15 @@
             <tr>
               <th>ID РК</th>
               <th>Расход</th>
-              <th>Конверсии</th>
-              <th>Квал-лиды</th>
-              <th>CPA</th>
-              <th>Стоимость квал-лида</th>
+              <th>Показы</th>
+              <th>Клики</th>
               <th>CTR</th>
+              <th>CPC</th>
+              <th>Конверсии</th>
+              <th>CR</th>
+              <th>CPA</th>
+              <th>Квал-лиды</th>
+              <th>Стоимость квал-лида</th>
             </tr>
           </thead>
           <tbody id="campaignRows"></tbody>
