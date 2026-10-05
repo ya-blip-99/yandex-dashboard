@@ -27,29 +27,15 @@ function csv(text){
   return rows;
 }
 async function load(url){
-  const candidates=[
-    url+(url.includes("?")?"&":"?")+"_="+Date.now(),
-    url.replace("/gviz/tq?tqx=out:csv&gid=","/export?format=csv&gid=")+(url.includes("_=")?"":"&")+"cb="+Date.now()
-  ];
-  let lastError=null;
-  for(const candidate of candidates){
-    for(let attempt=1;attempt<=3;attempt++){
-      try{
-        const r=await fetch(candidate,{cache:"no-store",credentials:"omit"});
-        if(!r.ok)throw Error("HTTP "+r.status);
-        const t=await r.text();
-        if(!t||t.includes("<html")||t.includes("accounts.google"))throw Error("Google returned HTML instead of CSV");
-        const rows=csv(t);
-        if(!rows.length)throw Error("Empty CSV");
-        return rows;
-      }catch(e){
-        lastError=e;
-        await new Promise(res=>setTimeout(res,attempt*500));
-      }
-    }
-  }
-  throw lastError||Error("Не удалось загрузить CSV");
+  const r=await fetch(url+"&_="+Date.now(),{cache:"no-store"});
+  if(!r.ok)throw Error("HTTP "+r.status);
+  const t=await r.text();
+  if(!t||t.includes("<html")||t.includes("accounts.google"))throw Error("Google Sheets returned HTML");
+  const rows=csv(t);
+  if(!rows.length)throw Error("Пустой CSV");
+  return rows;
 }
+
 function parseDate(s){
   const d=new Date(s);if(!isNaN(d))return new Date(d.getFullYear(),d.getMonth(),d.getDate());
   const m=String(s).match(/(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})/);
@@ -209,9 +195,12 @@ async function init(){
     populateAccounts();populateCampaigns();defaults();render();
     $("status").textContent="Данные загружены · "+int(direct.length)+" строк";
   }catch(e){
-    console.error(e);$("status").textContent="Ошибка загрузки данных";$("setup").classList.remove("hidden");
+    console.error(e);
+    $("status").textContent="Ошибка загрузки данных";
+    $("setup").classList.remove("hidden");
     $("setup").querySelector("h2").textContent="Не удалось загрузить данные";
-    $("setup").querySelector("p").textContent="Google Sheets временно не ответил. Обновите страницу через несколько секунд. Доступ к таблице открыт корректно.";
+    $("setup").querySelector("p").innerHTML='Google Sheets временно не ответил. <button id="retryLoad" class="retry-btn">Повторить загрузку</button>';
+    setTimeout(()=>{const b=$("retryLoad"); if(b) b.onclick=()=>location.reload();},0);
   }
 }
 $("account").addEventListener("change",populateCampaigns);
