@@ -7,7 +7,7 @@ const $=id=>document.getElementById(id);
 const rub=n=>new Intl.NumberFormat("ru-RU",{style:"currency",currency:"RUB",maximumFractionDigits:0}).format(n||0);
 const int=n=>new Intl.NumberFormat("ru-RU",{maximumFractionDigits:0}).format(n||0);
 const pct=n=>new Intl.NumberFormat("ru-RU",{style:"percent",minimumFractionDigits:2,maximumFractionDigits:2}).format(n||0);
-const iso=d=>d.toISOString().slice(0,10);
+const iso=d=>{const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,"0"),day=String(d.getDate()).padStart(2,"0");return y+"-"+m+"-"+day};
 const num=v=>Number(String(v??"").replace(/\s/g,"").replace(",",".").replace(/[^\d.-]/g,""))||0;
 
 function csv(text){
@@ -193,21 +193,23 @@ function render(){
   const r=range(),acc=$("account").value,cam=$("campaign").value;
   const A=filter(direct,r.a,r.b,acc,cam),B=filter(direct,r.c,r.d,acc,cam);
   const QA=filter(amo,r.a,r.b,acc,cam),QB=filter(amo,r.c,r.d,acc,cam);
-  const a=sum(A,QA),b=sum(B,QB),targets=currentTargets(a);
+  const a=sum(A,QA),b=sum(B,QB);
+  const benchmarkA=filter(direct,r.a,r.b,acc,"ALL"),benchmarkQA=filter(amo,r.a,r.b,acc,"ALL");
+  const benchmark=sum(benchmarkA,benchmarkQA),targets=currentTargets(benchmark);
 
   $("spend").textContent=rub(a.cost);
   $("conversions").textContent=int(a.conv);
-  $("qualified").textContent=int(a.qual);
+  $("qualified").textContent=amo.length?int(a.qual):"—";
   $("cpa").textContent=rub(a.cpa);
-  $("cql").textContent=a.qual?rub(a.cql):"—";
+  $("cql").textContent=amo.length&&a.qual?rub(a.cql):"—";
   $("cr").textContent=pct(a.cr);
 
   setDelta("spendDelta",a.cost,b.cost);
   setDelta("conversionsDelta",a.conv,b.conv);
-  setDelta("qualifiedDelta",a.qual,b.qual);
+  if(amo.length)setDelta("qualifiedDelta",a.qual,b.qual);else{$("qualifiedDelta").textContent="amoCRM не подключена";$("qualifiedDelta").className=""}
   setDelta("cpaDelta",a.cpa,b.cpa,true);
   setDelta("crDelta",a.cr,b.cr);
-  if(a.qual&&b.qual)setDelta("cqlDelta",a.cql,b.cql,true);else{$("cqlDelta").textContent="Сравнение недоступно";$("cqlDelta").className=""}
+  if(amo.length&&a.qual&&b.qual)setDelta("cqlDelta",a.cql,b.cql,true);else{$("cqlDelta").textContent=amo.length?"Сравнение недоступно":"amoCRM не подключена";$("cqlDelta").className=""}
 
   $("funnelClicks").textContent=int(a.clicks);
   $("funnelConversions").textContent=int(a.conv);
