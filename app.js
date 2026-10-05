@@ -2,7 +2,7 @@ const SHEET_ID="1GwmyHfJ5bYTpIScloetzE4dlQjtO5C5-VkRwFhoxY5c";
 const DIRECT_URL="https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/gviz/tq?tqx=out:csv&gid=1099101464";
 const AMO_URL="https://docs.google.com/spreadsheets/d/"+SHEET_ID+"/gviz/tq?tqx=out:csv&gid=2000000004";
 
-let direct=[],amo=[],spendChart=null,leadChart=null;
+let direct=[],amo=[],spendChart=null,leadChart=null,tableMode="all";
 const $=id=>document.getElementById(id);
 const rub=n=>new Intl.NumberFormat("ru-RU",{style:"currency",currency:"RUB",maximumFractionDigits:0}).format(n||0);
 const int=n=>new Intl.NumberFormat("ru-RU",{maximumFractionDigits:0}).format(n||0);
@@ -73,6 +73,8 @@ function sum(rows,qrows){
   s.cpa=s.conv?s.cost/s.conv:0;
   s.cql=s.qual?s.cost/s.qual:0;
   s.ctr=s.imp?s.clicks/s.imp:0;
+  s.cpc=s.clicks?s.cost/s.clicks:0;
+  s.cr=s.clicks?s.conv/s.clicks:0;
   return s;
 }
 function comparison(a,b,invert=false){
@@ -168,6 +170,8 @@ function render(){
   $("cpa").textContent=rub(a.cpa);
   $("cql").textContent=a.qual?rub(a.cql):"—";
   $("ctr").textContent=pct(a.ctr);
+  $("cpc").textContent=rub(a.cpc);
+  $("cr").textContent=pct(a.cr);
 
   setDelta("spendDelta",a.cost,b.cost);
   setDelta("conversionsDelta",a.conv,b.conv);
@@ -175,6 +179,8 @@ function render(){
   setDelta("cpaDelta",a.cpa,b.cpa,true);
   if(a.qual&&b.qual)setDelta("cqlDelta",a.cql,b.cql,true);else{$("cqlDelta").textContent="Сравнение недоступно";$("cqlDelta").className=""}
   setDelta("ctrDelta",a.ctr,b.ctr);
+  setDelta("cpcDelta",a.cpc,b.cpc,true);
+  setDelta("crDelta",a.cr,b.cr);
 
   const p=points(A,QA),labels=p.map(x=>x[0]);
   spendChart=chart(spendChart,"spendChart","bar",labels,[{label:"Расход",data:p.map(x=>x[1].cost),backgroundColor:"rgba(59,130,246,.60)",borderColor:"#60a5fa",borderWidth:1}]);
@@ -186,7 +192,35 @@ function render(){
   const m=new Map;
   A.forEach(x=>{const v=m.get(x.campaignId)||{cost:0,conv:0,clicks:0,imp:0,qual:0};v.cost+=x.cost;v.conv+=x.conversions;v.clicks+=x.clicks;v.imp+=x.impressions;m.set(x.campaignId,v)});
   QA.forEach(x=>{const v=m.get(x.campaignId)||{cost:0,conv:0,clicks:0,imp:0,qual:0};v.qual+=x.qualified;m.set(x.campaignId,v)});
-  $("campaignRows").innerHTML=[...m].sort((a,b)=>b[1].cost-a[1].cost).map(([id,v])=>'<tr><td>'+id+'</td><td>'+rub(v.cost)+'</td><td>'+int(v.conv)+'</td><td>'+int(v.qual)+'</td><td>'+rub(v.conv?v.cost/v.conv:0)+'</td><td>'+(v.qual?rub(v.cost/v.qual):"—")+'</td><td>'+pct(v.imp?v.clicks/v.imp:0)+'</td></tr>').join("")||'<tr><td colspan="7">Нет данных</td></tr>';
+
+  let campaigns=[...m].map(([id,v])=>{
+    v.ctr=v.imp?v.clicks/v.imp:0;
+    v.cpc=v.clicks?v.cost/v.clicks:0;
+    v.cr=v.clicks?v.conv/v.clicks:0;
+    v.cpa=v.conv?v.cost/v.conv:0;
+    v.cql=v.qual?v.cost/v.qual:0;
+    return {id,...v};
+  }).sort((x,y)=>y.cost-x.cost);
+
+  const avg={cpa:a.cpa,ctr:a.ctr,cr:a.cr};
+  campaigns.forEach(v=>{
+    v.issues=[];
+    const zeroConvThreshold=Math.max(avg.cpa||0,1000);
+    if(v.cost>=zeroConvThreshold&&v.conv===0)v.issues.push("Есть расход, но нет конверсий");
+    if(v.conv>0&&avg.cpa>0&&v.cpa>avg.cpa*1.35)v.issues.push("CPA выше среднего на 35%+");
+    if(v.imp>=500&&avg.ctr>0&&v.ctr<avg.ctr*0.7)v.issues.push("CTR ниже среднего на 30%+");
+    if(v.clicks>=30&&avg.cr>0&&v.cr<avg.cr*0.65)v.issues.push("CR ниже среднего на 35%+");
+    v.problem=v.issues.length>0;
+  });
+
+  const problemCampaigns=campaigns.filter(v=>v.problem);
+  $("attentionCount").textContent=problemCampaigns.length;
+  $("attentionList").innerHTML=problemCampaigns.length
+    ? problemCampaigns.slice(0,6).map(v=>'<div class="attention-item"><strong>РК '+v.id+'</strong><span>'+v.issues.join(" · ")+'</span></div>').join("")
+    : '<div class="attention-ok">Критичных отклонений за выбранный период не найдено.</div>';
+
+  const visible=tableMode==="problems"?problemCampaigns:campaigns;
+  $("campaignRows").innerHTML=visible.map(v=>'<tr class="'+(v.problem?"problem-row":"")+'"><td>'+v.id+'</td><td>'+rub(v.cost)+'</td><td>'+int(v.imp)+'</td><td>'+int(v.clicks)+'</td><td>'+pct(v.ctr)+'</td><td>'+rub(v.cpc)+'</td><td>'+int(v.conv)+'</td><td>'+pct(v.cr)+'</td><td>'+rub(v.cpa)+'</td><td>'+int(v.qual)+'</td><td>'+(v.qual?rub(v.cql):"—")+'</td></tr>').join("")||'<tr><td colspan="11">Нет данных</td></tr>';
 }
 async function init(){
   try{
@@ -208,5 +242,7 @@ $("periodPreset").addEventListener("change",e=>setPeriodPreset(e.target.value));
 $("fromA").addEventListener("change",()=>{$("periodPreset").value=""});
 $("toA").addEventListener("change",()=>{$("periodPreset").value=""});
 $("apply").addEventListener("click",render);
-$("reset").addEventListener("click",()=>{populateAccounts();populateCampaigns();defaults();render()});
+$("reset").addEventListener("click",()=>{tableMode="all";populateAccounts();populateCampaigns();defaults();$("showAll").classList.add("active");$("showProblems").classList.remove("active");render()});
+$("showAll").addEventListener("click",()=>{tableMode="all";$("showAll").classList.add("active");$("showProblems").classList.remove("active");render()});
+$("showProblems").addEventListener("click",()=>{tableMode="problems";$("showProblems").classList.add("active");$("showAll").classList.remove("active");render()});
 init();
