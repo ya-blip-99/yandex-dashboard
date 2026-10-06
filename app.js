@@ -258,7 +258,13 @@ function render(){
 async function init(){
   try{
     const d=await load(DIRECT_URL);direct=mapDirect(d);
-    try{amo=mapAmo(await load(AMO_URL))}catch{amo=[]}
+    try{
+      const amoRaw=mapAmo(await load(AMO_URL));
+      const knownCampaigns=new Set(direct.map(x=>x.campaignId));
+      amo=amoRaw.filter(x=>knownCampaigns.has(x.campaignId));
+      const unmatched=amoRaw.length-amo.length;
+      if(unmatched)console.warn("Исключено несопоставленных amoCRM строк:",unmatched);
+    }catch{amo=[]}
     populateAccounts();populateCampaigns();defaults();loadTargets();render();
     $("status").textContent="Данные загружены · "+int(direct.length)+" строк";
   }catch(e){
