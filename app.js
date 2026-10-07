@@ -202,13 +202,13 @@ function render(){
   $("qualified").textContent=amo.length?int(a.qual):"—";
   $("cpa").textContent=rub(a.cpa);
   $("cql").textContent=amo.length&&a.qual?rub(a.cql):"—";
-  $("cr").textContent=pct(a.cr);
+  $("qualRate").textContent=amo.length?pct(a.qualRate):"—";
 
   setDelta("spendDelta",a.cost,b.cost);
   setDelta("conversionsDelta",a.conv,b.conv);
   if(amo.length)setDelta("qualifiedDelta",a.qual,b.qual);else{$("qualifiedDelta").textContent="amoCRM не подключена";$("qualifiedDelta").className=""}
   setDelta("cpaDelta",a.cpa,b.cpa,true);
-  setDelta("crDelta",a.cr,b.cr);
+  if(amo.length)setDelta("qualRateDelta",a.qualRate,b.qualRate);else{$("qualRateDelta").textContent="amoCRM не подключена";$("qualRateDelta").className=""}
   if(amo.length&&a.qual&&b.qual)setDelta("cqlDelta",a.cql,b.cql,true);else{$("cqlDelta").textContent=amo.length?"Сравнение недоступно":"amoCRM не подключена";$("cqlDelta").className=""}
 
   $("funnelClicks").textContent=int(a.clicks);
